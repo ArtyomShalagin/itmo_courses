@@ -89,15 +89,15 @@ public:
             add(pcode, "\x48\xb8");
             *(void **) pcode = (void *) &do_call<F>; // mov addr of do call to rax
             pcode += 8;
-            add(pcode, `(jmp * % rax));
+            add(pcode, `(jmp *%rax));
         } else {
             int stack_size = 8 * (args_cnt<Args...>::INT - 5
                                   + std::max(args_cnt<Args...>::SSE - 8, 0));
-            add(pcode, `(movq( % rsp), %r11));
+            add(pcode, `(movq (%rsp), %r11));
             for (ssize_t i = 5; i >= 0; i--) {
                 add(pcode, shifts[i]);
             }
-            add(pcode, `(movq % rsp, % rax));
+            add(pcode, `(movq %rsp, %rax));
             add(pcode, "\x48\x05"); // addq $stack_size, %rax
             *(int32_t *) pcode = stack_size;
             pcode += 4;
@@ -112,14 +112,14 @@ public:
             add(pcode, "\x48\x81\xc4"); // adding 8 to %rsp
             *pcode = 8;
             pcode += 4;
-            add(pcode, `(movq( % rsp), %rdi));
-            add(pcode, `(movq % rdi, -8( % rsp)));
+            add(pcode, `(movq (%rsp), %rdi));
+            add(pcode, `(movq %rdi, -8(%rsp)));
             add(pcode, "\xeb"); // jump to label1
             *pcode = label_1 - pcode - 1;
             pcode++;
 
             *label_2 = pcode - label_2 - 1;
-            add(pcode, `(movq % r11,( % rsp)));
+            add(pcode, `(movq %r11, (%rsp)));
             add(pcode, "\x48\x81\xec");
             *(int32_t *) pcode = stack_size; // sub stack size from rsp
             pcode += 4;
@@ -136,12 +136,12 @@ public:
             add(pcode, "\xff\xd0"); // call %rax, godbolt does this and it works, WHY?
             // my gdb gives \x10
             //restore
-            add(pcode, `(popq % r9));
+            add(pcode, `(popq %r9));
             add(pcode, "\x4c\x8b\x9c\x24"); // movq (%rsp + stack_size - $8), %r11
             *(int32_t *) pcode = stack_size - 8;
             pcode += 4;
 
-            add(pcode, `(movq % r11,( % rsp)));
+            add(pcode, `(movq %r11, (%rsp)));
             add(pcode, `(retq));
         }
     }
